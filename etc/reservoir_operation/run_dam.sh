@@ -262,7 +262,6 @@ do
 
   echo "LRESTART: ${LRESTART}"  >> log.txt
 
-
   #*** 3b. update start-end year
   SYEAR=$IYR
   SMON=1
