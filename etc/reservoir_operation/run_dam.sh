@@ -26,10 +26,13 @@
 # (0) Basic Setting (for workstation)
 
 #*** 0a. Set CaMa-Flood base directory
-PWDD=`pwd`
 BASE=`pwd`/../..
+PWDD=`pwd`
+
 #BASE="/cluster/data5/hanazaki/CaMa-Flood_v4/"
-# BASE="/home/yamadai/work/CaMa_v396/cmf_v396_pkg"  # setting for PBS in cluster
+
+#BASE="/home/yamadai/work/dev_CaMa_v3410/cmf_v410_pkg"  # setting for PBS in cluster
+#PWDD="${BASE}/etc/reservoir_operation"
 
 echo $BASE
 
@@ -67,7 +70,7 @@ LFLDOUT=".TRUE."                            # .TRUE. to activate floodplain disc
 LPTHOUT=".FALSE."                            # .TRUE. to activate bifurcation flow, mainly for delta simulation
 LDAMOUT=".TRUE."                           # .TRUE. to activate reservoir operation (under development)
 
-CDAMFILE="${PWDD}/sample_data/dam_params_glb_15min_ERA5Land.csv"
+CDAMFILE="${PWDD}/sample_data/dam_params_sample.csv"
 
 #============================
 #*** 1c. simulation time

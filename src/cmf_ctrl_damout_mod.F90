@@ -126,7 +126,7 @@ ALLOCATE(Qf(NDAM),Qn(NDAM))
 
 !! calculate from CDAMFILE
 ALLOCATE(DamSeq(NDAM))
-ALLOCATE(FldVol(NDAM),ConVol(NDAM),EmeVol(NDAM),NorVol(IDAM))
+ALLOCATE(FldVol(NDAM),ConVol(NDAM),EmeVol(NDAM),NorVol(NDAM))
 
 !! dam map
 ALLOCATE(I1DAM(NSEQALL))
