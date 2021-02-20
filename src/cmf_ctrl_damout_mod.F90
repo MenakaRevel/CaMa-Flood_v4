@@ -31,15 +31,15 @@ INTEGER(KIND=JPIM)              :: IDAM, NDAM  !! number of dams
 INTEGER(KIND=JPIM),ALLOCATABLE  :: GRanD_ID(:) !! GRanD ID
 CHARACTER(LEN=256),ALLOCATABLE  :: DamName(:)  !! 
 INTEGER(KIND=JPIM),ALLOCATABLE  :: DamIX(:), DamIY(:)  !! IX,IY of dam grid
-REAL(KIND=JPRB),ALLOCATABLE     :: DamLon(:), DamLat(:)
-REAL(KIND=JPRB),ALLOCATABLE     :: upreal(:)
-REAL(KIND=JPRB),ALLOCATABLE     :: FldVolUpa(:)
-REAL(KIND=JPRB),ALLOCATABLE     :: Qf(:), Qn(:)
+REAL(KIND=JPRB),ALLOCATABLE     :: DamLon(:), DamLat(:)  !! longitude, latitude of dam body
+REAL(KIND=JPRB),ALLOCATABLE     :: upreal(:)   !! observed drainage area of reservoir
+REAL(KIND=JPRB),ALLOCATABLE     :: FldVolUpa(:) !! flood storage capacity / drainage area
+REAL(KIND=JPRB),ALLOCATABLE     :: Qf(:), Qn(:) !! Qf: flood discharge, Qn: normal discharge
 
 REAL(KIND=JPRB),ALLOCATABLE     :: EmeVol(:)   !! storage volume to start emergency operation
-REAL(KIND=JPRB),ALLOCATABLE     :: FldVol(:)   !! flood storage capacity
-REAL(KIND=JPRB),ALLOCATABLE     :: ConVol(:)   !! flood control storage volume
-REAL(KIND=JPRB),ALLOCATABLE     :: NorVol(:)   !! normal storage volume
+REAL(KIND=JPRB),ALLOCATABLE     :: FldVol(:)   !! flood control volume: exclusive for flood control
+REAL(KIND=JPRB),ALLOCATABLE     :: ConVol(:)   !! conservative volume: mainly for water supply
+REAL(KIND=JPRB),ALLOCATABLE     :: NorVol(:)   !! normal storage volume: impoundment
 
 !*** dam map
 INTEGER(KIND=JPIM),ALLOCATABLE  :: DamSeq(:)   !! coresponding ISEQ of each dam
@@ -140,7 +140,7 @@ DO IDAM = 1, NDAM
    DamIX(IDAM), DamIY(IDAM), FldVol_mcm, ConVol_mcm, totalsto_mcm, FldVolUpa(IDAM), Qn(IDAM), Qf(IDAM)
 
   !! storage parameter --- from Million Cubic Meter to m3
-  FldVol(IDAM) = FldVol_mcm * 1.D6                  ! Flood control volume: 
+  FldVol(IDAM) = FldVol_mcm * 1.D6                  ! Flood control storage capacity: exclusive for flood control
   ConVol(IDAM) = ConVol_mcm * 1.D6
   EmeVol(IDAM) = ConVol(IDAM) + FldVol(IDAM) * 0.8     ! storage to start emergency operation
   NorVol(IDAM) = ConVol(IDAM) * 0.5    ! normal storage
