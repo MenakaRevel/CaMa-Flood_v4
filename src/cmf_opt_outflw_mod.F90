@@ -369,11 +369,6 @@ DO ISEQ=1, NSEQRIV ! for normal pixels
   D2RIVINF(JSEQ,1) = D2RIVINF(JSEQ,1) + D2RIVOUT(ISEQ,1)             !! total inflow to a grid (from upstream)
 !$OMP ATOMIC
   D2FLDINF(JSEQ,1) = D2FLDINF(JSEQ,1) + D2FLDOUT(ISEQ,1)
-
-  D2RIVOUT_PRE(ISEQ,1)=D2RIVOUT(ISEQ,1)                              !! save outflow (t)
-  D2RIVDPH_PRE(ISEQ,1)=D2RIVDPH(ISEQ,1)                              !! save depth   (t)
-  D2FLDOUT_PRE(ISEQ,1)=D2FLDOUT(ISEQ,1)                              !! save outflow (t)
-  D2FLDSTO_PRE(ISEQ,1)=D2FLDSTO(ISEQ,1)
 END DO
 #ifndef NoAtom
 !$OMP END PARALLEL DO  !! No OMP Atomic for bit-identical simulation (set in Mkinclude)
@@ -385,11 +380,6 @@ DO ISEQ=NSEQRIV+1, NSEQALL ! for river mouth
   D2FLDOUT(ISEQ,1) = D2FLDOUT(ISEQ,1)*D2RATE(ISEQ,1)
 END DO
 !$OMP END PARALLEL DO
-
-D2RIVOUT_PRE(:,1)=D2RIVOUT(:,1)                              !! save outflow (t)
-D2RIVDPH_PRE(:,1)=D2RIVDPH(:,1)                              !! save depth   (t)
-D2FLDOUT_PRE(:,1)=D2FLDOUT(:,1)                              !! save outflow (t)
-D2FLDSTO_PRE(:,1)=D2FLDSTO(:,1)
 
 END SUBROUTINE CMF_CALC_OUTFLW_KINEMIX
 !####################################################################

@@ -73,24 +73,33 @@ DO IT=1, NT
     CALL CMF_DAMOUT_CALC            !! reservoir operation
   ENDIF
 
+! --- save value for next tstet
+  CALL CALC_VARS_PRE
+
+
 !=== 2.  Calculate the storage in the next time step in FTCS diff. eq.
   CALL CMF_CALC_STONXT
 
+!=== option for ILS coupling
 #ifdef ILS
   IF( LLAKEIN )THEN
     CALL CMF_CALC_LAKEIN            !! calculate lake inflow for river-lake coupling
   ENDIF
 #endif
 
+
 !=== 3. calculate river and floodplain staging
   CALL CMF_CALC_FLDSTG
+
 
 !=== 4.  write water balance monitoring to IOFILE
   CALL CALC_WATBAL(IT)
 
+
 !=== 5. calculate averages, maximum
   CALL CMF_DIAG_AVEMAX
 
+!=== option for ILS coupling
 #ifdef ILS
   IF( LLAKEIN )THEN
     CALL CMF_LAKEIN_AVE
@@ -105,7 +114,7 @@ CONTAINS
 !==========================================================
 !+ CALC_ADPSTP
 !+ CALC_WATBAL(IT)
-!+
+!+ CALC_VARS_PRE
 !==========================================================
 SUBROUTINE CALC_ADPSTP
 USE YOS_CMF_INPUT,      ONLY: PGRV, PDSTMTH, PCADP
@@ -175,6 +184,30 @@ WRITE(LOGNAM,'(I4.4,4(A1,I2.2),I6,3F12.3,2x,2F12.3,2x,2F12.3,G12.3,F12.3)') &
   DGLBRIVINF*DORD, DGLBRIVOUT*DORD, DMISSING*DORD,   DGLBFLDARE*DORD
 
 END SUBROUTINE CALC_WATBAL
+!==========================================================
+!+
+!+
+!+
+!==========================================================
+SUBROUTINE CALC_VARS_PRE
+USE YOS_CMF_MAP,             ONLY: NSEQALL
+USE YOS_CMF_PROG,            ONLY: D2RIVOUT,     D2FLDOUT,     D2FLDSTO
+USE YOS_CMF_PROG,            ONLY: D2RIVOUT_PRE, D2FLDOUT_PRE, D2FLDSTO_PRE, D2RIVDPH_PRE
+USE YOS_CMF_DIAG,            ONLY: D2RIVDPH
+IMPLICIT NONE
+!$ SAVE
+INTEGER(KIND=JPIM)              :: ISEQ
+! ================================================
+!$OMP PARALLEL DO
+DO ISEQ=1, NSEQALL ! for river mouth
+  D2RIVOUT_PRE(ISEQ,1)=D2RIVOUT(ISEQ,1)                              !! save outflow (t)
+  D2RIVDPH_PRE(ISEQ,1)=D2RIVDPH(ISEQ,1)                              !! save depth   (t)
+  D2FLDOUT_PRE(ISEQ,1)=D2FLDOUT(ISEQ,1)                              !! save outflow (t)
+  D2FLDSTO_PRE(ISEQ,1)=D2FLDSTO(ISEQ,1)
+END DO
+!$OMP END PARALLEL DO
+
+END SUBROUTINE CALC_VARS_PRE
 !==========================================================
 
 END SUBROUTINE CMF_ADVANCE_PHYSICS

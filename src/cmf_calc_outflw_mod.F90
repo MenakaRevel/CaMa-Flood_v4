@@ -222,11 +222,6 @@ DO ISEQ=NSEQRIV+1, NSEQALL ! for river mouth
 END DO
 !$OMP END PARALLEL DO
 
-D2RIVOUT_PRE(:,1)=D2RIVOUT(:,1)                              !! save outflow (t)
-D2RIVDPH_PRE(:,1)=D2RIVDPH(:,1)                              !! save depth   (t)
-D2FLDOUT_PRE(:,1)=D2FLDOUT(:,1)                              !! save outflow (t)
-D2FLDSTO_PRE(:,1)=D2FLDSTO(:,1)
-
 END SUBROUTINE CMF_CALC_OUTFLW
 !####################################################################
 

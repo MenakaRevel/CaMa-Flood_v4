@@ -33,7 +33,7 @@ CHARACTER(LEN=256),ALLOCATABLE  :: DamName(:)  !!
 INTEGER(KIND=JPIM),ALLOCATABLE  :: DamIX(:), DamIY(:)  !! IX,IY of dam grid
 REAL(KIND=JPRB),ALLOCATABLE     :: DamLon(:), DamLat(:)  !! longitude, latitude of dam body
 REAL(KIND=JPRB),ALLOCATABLE     :: upreal(:)   !! observed drainage area of reservoir
-REAL(KIND=JPRB),ALLOCATABLE     :: FldVolUpa(:) !! flood storage capacity / drainage area
+REAL(KIND=JPRB),ALLOCATABLE     :: R_VolUpa(:) !! ratio: flood storage capacity / drainage area
 REAL(KIND=JPRB),ALLOCATABLE     :: Qf(:), Qn(:) !! Qf: flood discharge, Qn: normal discharge
 
 REAL(KIND=JPRB),ALLOCATABLE     :: EmeVol(:)   !! storage volume to start emergency operation
@@ -43,7 +43,7 @@ REAL(KIND=JPRB),ALLOCATABLE     :: NorVol(:)   !! normal storage volume: impound
 
 !*** dam map
 INTEGER(KIND=JPIM),ALLOCATABLE  :: DamSeq(:)   !! coresponding ISEQ of each dam
-INTEGER(KIND=JPIM),ALLOCATABLE  :: I1DAM(:)    !! dam map: 1=dam, 10=upstream of dam, 0=other
+INTEGER(KIND=JPIM),ALLOCATABLE  :: I1DAM(:)    !! dam map: 1=dam, 10=upstream of dam, 11: dam grid & downstream is also dam, 0=other
 
 CONTAINS
 !####################################################################
@@ -94,8 +94,8 @@ END SUBROUTINE CMF_DAMOUT_NMLIST
 SUBROUTINE CMF_DAMOUT_INIT
 USE CMF_UTILS_MOD,      ONLY: INQUIRE_FID
 USE YOS_CMF_INPUT,      ONLY: NX, NY, LRESTART
-USE YOS_CMF_MAP,        ONLY: I2VECTOR, I1NEXT, NSEQALL
-USE YOS_CMF_PROG,       ONLY: D2DAMSTO
+USE YOS_CMF_MAP,        ONLY: I2VECTOR, I1NEXT, NSEQALL, NSEQMAX
+USE YOS_CMF_PROG,       ONLY: D2DAMSTO, D2DAMINF
 
 ! reed setting from CDAMFILE
 IMPLICIT NONE
@@ -121,23 +121,22 @@ WRITE(LOGNAM,*) "CMF::DAMOUT_INIT: number of dams", NDAM
 ALLOCATE(GRanD_ID(NDAM),DamName(NDAM))
 ALLOCATE(DamIX(NDAM),DamIY(NDAM),DamLon(NDAM),DamLat(NDAM))
 ALLOCATE(upreal(NDAM))
-ALLOCATE(FldVolUpa(NDAM))
+ALLOCATE(R_VolUpa(NDAM))
 ALLOCATE(Qf(NDAM),Qn(NDAM))
 
 !! calculate from CDAMFILE
 ALLOCATE(DamSeq(NDAM))
 ALLOCATE(FldVol(NDAM),ConVol(NDAM),EmeVol(NDAM),NorVol(NDAM))
 
-!! dam map
-ALLOCATE(I1DAM(NSEQALL))
+!! dam map, dam variable
+ALLOCATE(I1DAM(NSEQMAX))
 !! =================
-
 DamSeq(:)=-9999
 I1DAM(:)=0
 !! read dam parameters
 DO IDAM = 1, NDAM
   READ(NDAMFILE,*) GRanD_ID(IDAM), DamName(IDAM), DamLon(IDAM), DamLat(IDAM), upreal(IDAM), &
-   DamIX(IDAM), DamIY(IDAM), FldVol_mcm, ConVol_mcm, totalsto_mcm, FldVolUpa(IDAM), Qn(IDAM), Qf(IDAM)
+   DamIX(IDAM), DamIY(IDAM), FldVol_mcm, ConVol_mcm, totalsto_mcm, R_VolUpa(IDAM), Qn(IDAM), Qf(IDAM)
 
   !! storage parameter --- from Million Cubic Meter to m3
   FldVol(IDAM) = FldVol_mcm * 1.D6                  ! Flood control storage capacity: exclusive for flood control
@@ -158,10 +157,17 @@ CLOSE(NDAMFILE)
 
 !! mark upstream of dam grid, for applying kinematic wave routine to suppress storage buffer effect.
 DO ISEQ=1, NSEQALL
-  IF( I1DAM(ISEQ)==0 .and. I1NEXT(ISEQ)>0 )THEN
+  IF( I1DAM(ISEQ)==0 .and. I1NEXT(ISEQ)>0 )THEN !! if target is non-dam grid
     JSEQ=I1NEXT(ISEQ)
-    IF( I1DAM(JSEQ)==1 )THEN
+    IF( I1DAM(JSEQ)==1 .or. I1DAM(JSEQ)==11 )THEN !! if downstream is dam
       I1DAM(ISEQ)=10            !! mark upstream of dam grid by "10"
+    ENDIF
+  ENDIF
+
+  IF( I1DAM(ISEQ)==1 .and. I1NEXT(ISEQ)>0 )THEN !! if target is dam grid
+    JSEQ=I1NEXT(ISEQ)
+    IF( I1DAM(JSEQ)==1 .or. I1DAM(JSEQ)==11 )THEN !! if downstream is dam
+      I1DAM(ISEQ)=11            !! mark upstream of dam grid by "11"
     ENDIF
   ENDIF
 END DO
@@ -177,6 +183,11 @@ IF( .not. LRESTART )THEN
   END DO
 ENDIF
 
+!! Initialize dam inflow
+DO ISEQ=1, NSEQALL
+  D2DAMINF(ISEQ,1)=0.D0
+END DO
+
 END SUBROUTINE CMF_DAMOUT_INIT
 !####################################################################
 
@@ -187,11 +198,10 @@ END SUBROUTINE CMF_DAMOUT_INIT
 !####################################################################
 SUBROUTINE CMF_DAMOUT_CALC
 USE YOS_CMF_INPUT,      ONLY: DT
-USE YOS_CMF_MAP,        ONLY: I1NEXT, NSEQALL, NSEQRIV
+USE YOS_CMF_MAP,        ONLY: I1NEXT,   NSEQALL,  NSEQRIV
 USE YOS_CMF_PROG,       ONLY: D2RIVOUT, D2FLDOUT, D2RIVSTO, D2FLDSTO
-USE YOS_CMF_PROG,       ONLY: D2RIVOUT_PRE, D2FLDOUT_PRE
 USE YOS_CMF_PROG,       ONLY: D2DAMSTO, D2DAMINF, D2RUNOFF    !! 
-USE YOS_CMF_DIAG,       ONLY: D2RIVDPH, D2RIVVEL, D2RIVINF, D2FLDDPH, D2FLDINF
+USE YOS_CMF_DIAG,       ONLY: D2RIVINF, D2FLDINF
 ! local
 IMPLICIT NONE
 !$ SAVE
@@ -205,12 +215,16 @@ REAL(KIND=JPRB)            :: GlbDAMSTO, GlbDAMSTONXT, GlbDAMINF, GlbDAMOUT, Dam
 
 !$OMP THREADPRIVATE    (ISEQD,DamVol,DamInflow,DamOutflw)
 !====================
-
+!CONTAINS
+!+ UPDATE_INFLOW: replace dam upstream with kinamatic wave, calculate inflow to dam
+!+ MODIFY_OUTFLW: modify outflw to avoid negative storage
+!+
+!==========================================================
 
 !* (1) Replace discharge in upstream grids with kinematic outflow
 !     to avoid storage buffer effect (Shin et al., 2019, WRR)
 ! ------  rivout at upstream grids of dam, rivinf to dam grids are updated.
-CALL UPDAM_KINE
+CALL UPDATE_INFLOW
 
 
 !* (2) Reservoir Operation
@@ -221,8 +235,8 @@ DO IDAM=1, NDAM
   ISEQD=DamSeq(IDAM)
 
   !! *** 2a update dam volume and inflow -----------------------------------
-  DamVol = D2DAMSTO(ISEQD,1)    
-  DamInflow = D2RIVINF(ISEQD,1) + D2FLDINF(ISEQD,1) + D2RUNOFF(ISEQD,1)   !! inflow to Dam
+  DamVol    = D2DAMSTO(ISEQD,1)    
+  DamInflow = D2DAMINF(ISEQD,1)
 
   !! *** 2b Reservoir Operation          ------------------------------
   !! case1: impoundment
@@ -231,14 +245,14 @@ DO IDAM=1, NDAM
   !! case2: water supply
   ELSEIF( NorVol(IDAM)<DamVol .and. DamVol<=ConVol(IDAM) )THEN
     IF( Qf(IDAM)<=DamInflow )THEN
-      DamOutflw = Qn(IDAM)*0.5 + ( DamVol-NorVol(IDAM) )/( ConVol(IDAM)-NorVol(IDAM)) * ( Qf(IDAM)-Qn(IDAM) )
+      DamOutflw = Qn(IDAM)*0.5 +   (DamVol-NorVol(IDAM))/( ConVol(IDAM)-NorVol(IDAM))      * (Qf(IDAM) - Qn(IDAM))
     ELSE
       DamOutflw = Qn(IDAM)*0.5 + (((DamVol-NorVol(IDAM))/( EmeVol(IDAM)-NorVol(IDAM)))**2) * (Qf(IDAM) - Qn(IDAM))
     ENDIF  
   !! case3: flood control
   ELSEIF( ConVol(IDAM)<DamVol .and. DamVol<EmeVol(IDAM) ) THEN
     IF( Qf(IDAM) <= DamInflow ) THEN
-      DamOutflw = Qf(IDAM) + max((1.D0-FldVolUpa(IDAM)/0.2),0.D0) &
+      DamOutflw = Qf(IDAM) + max((1.D0-R_VolUpa(IDAM)/0.2),0.D0) &
         * (DamVol-ConVol(IDAM))/(EmeVol(IDAM)-ConVol(IDAM)) * (DamInflow-Qf(IDAM))
     !! pre- and after flood control
     ELSE
@@ -259,7 +273,7 @@ DO IDAM=1, NDAM
 END DO
 !$OMP END PARALLEL DO
 
-!* 3) modify outflow to suppless negative discharge
+!* 3) modify outflow to suppless negative discharge, update RIVOUT,FLDOUT,RIVINF,FLDINF
 CALL MODIFY_OUTFLW
 
 
@@ -275,11 +289,11 @@ DO IDAM=1, NDAM
   ISEQD = DamSeq(IDAM)
 
   DamInflow = D2RIVINF(ISEQD,1) + D2FLDINF(ISEQD,1) + D2RUNOFF(ISEQD,1)
-  D2DAMINF(ISEQD,1) = DamInflow
   DamOutflw = D2RIVOUT(ISEQD,1) + D2FLDOUT(ISEQD,1)
+!!D2DAMINF(ISEQD,1)=DamInflow   !! if water balance needs to be checked in the output file, D2DAMINF should be updated.
 
   GlbDAMSTO = GlbDAMSTO + D2DAMSTO(ISEQD,1)
-  GlbDAMINF = GlbDAMINF + D2DAMINF(ISEQD,1)*DT
+  GlbDAMINF = GlbDAMINF + DamInflow*DT
   GlbDAMOUT = GlbDAMOUT + DamOutflw*DT
 
   D2DAMSTO(ISEQD,1) = D2DAMSTO(ISEQD,1) + DamInflow * DT - DamOutflw * DT
@@ -294,39 +308,52 @@ WRITE(LOGNAM,*) "CMF::DAM_CALC: DamMiss at all dams:", DamMiss*1.D-9
 
 CONTAINS
 !==========================================================
-!+ UPDAM_KINE:    replace dam upstream flow with kinamatic wave routine
+!+ UPDATE_INFLOW: replace dam upstream with kinamatic wave, calculate inflow to dam
 !+ MODIFY_OUTFLW: modify outflw to avoid negative storage
 !+
 !==========================================================
-SUBROUTINE UPDAM_KINE
+SUBROUTINE UPDATE_INFLOW
 USE YOS_CMF_INPUT,      ONLY: PMINSLP, PMANFLD
 USE YOS_CMF_MAP,        ONLY: D2RIVLEN, D2RIVMAN, D2ELEVTN, D2NXTDST, D2RIVWTH
-
+USE YOS_CMF_PROG,       ONLY: D2RIVOUT_PRE, D2FLDOUT_PRE
+USE YOS_CMF_DIAG,       ONLY: D2RIVDPH, D2RIVVEL, D2RIVINF, D2FLDDPH, D2FLDINF
 IMPLICIT NONE
 !$ SAVE
 INTEGER                    :: ISEQ, JSEQ
 REAL(KIND=JPRB)            :: DSLOPE,DAREA,DVEL,DSLOPE_F,DARE_F,DVEL_F
 !$OMP THREADPRIVATE     (JSEQ,DSLOPE,DAREA,DVEL,DSLOPE_F,DARE_F,DVEL_F)
+!============================
 
-!*** 1a. reset outflw & downstream inflow
+!*** 1a. reset outflw & dam inflow
 !$OMP PARALLEL DO
 DO ISEQ=1, NSEQALL
-  IF( I1DAM(ISEQ)==10 )THEN  !! if upstream of dam
-    JSEQ = I1NEXT(ISEQ)
-    D2RIVINF(JSEQ,1) = 0.D0
-    D2FLDINF(JSEQ,1) = 0.D0
+  IF( I1DAM(ISEQ)>0 )THEN  !! if dam grid or upstream of dam, reset variables
     D2RIVOUT(ISEQ,1) = 0.D0
     D2FLDOUT(ISEQ,1) = 0.D0
+    D2DAMINF(ISEQ,1) = 0.D0
   ENDIF
 END DO
 !$OMP END PARALLEL DO
 
-!*** 1b. discharge for upstream grids of dams
+!*** 1b. calculate dam inflow, using previous tstep discharge
 #ifndef NoAtom
 !$OMP PARALLEL DO  !! No OMP Atomic for bit-identical simulation (set in Mkinclude)
 #endif
+DO ISEQ=1, NSEQALL
+  IF( I1DAM(ISEQ)==10 .or. I1DAM(ISEQ)==11 )THEN  !! if dam grid or upstream of dam
+    JSEQ=I1NEXT(ISEQ)
+!$OMP ATOMIC
+    D2DAMINF(JSEQ,1) = D2DAMINF(JSEQ,1) + D2RIVOUT_PRE(ISEQ,1) + D2FLDOUT_PRE(ISEQ,1) 
+  ENDIF
+END DO
+#ifndef NoAtom
+!$OMP END PARALLEL DO
+#endif
+
+!*** 1c. discharge for upstream grids of dams
+!$OMP PARALLEL DO  !! No OMP Atomic for bit-identical simulation (set in Mkinclude)
 DO ISEQ=1, NSEQRIV
-  IF( I1DAM(ISEQ)==10 )THEN
+  IF( I1DAM(ISEQ)==10 )THEN  !! if downstream is DAM
     JSEQ   = I1NEXT(ISEQ)
     ! === river flow
     DSLOPE = (D2ELEVTN(ISEQ,1)-D2ELEVTN(JSEQ,1)) * D2NXTDST(ISEQ,1)**(-1.D0)
@@ -346,18 +373,11 @@ DO ISEQ=1, NSEQRIV
 
     D2FLDOUT(ISEQ,1) = DARE_F * DVEL_F
     D2FLDOUT(ISEQ,1) = MIN(  D2FLDOUT(ISEQ,1), D2FLDSTO(ISEQ,1)/DT )
-
-!$OMP ATOMIC
-    D2RIVINF(JSEQ,1) = D2RIVINF(JSEQ,1) + D2RIVOUT(ISEQ,1)             !! total inflow to a grid (from upstream)
-!$OMP ATOMIC
-    D2FLDINF(JSEQ,1) = D2FLDINF(JSEQ,1) + D2FLDOUT(ISEQ,1)
   ENDIF
 END DO
-#ifndef NoAtom
 !$OMP END PARALLEL DO
-#endif
 
-END SUBROUTINE UPDAM_KINE
+END SUBROUTINE UPDATE_INFLOW
 !==========================================================
 !+
 !+
@@ -455,14 +475,6 @@ END DO
 DO ISEQ=NSEQRIV+1, NSEQALL
   D2RIVOUT(ISEQ,1) = D2RIVOUT(ISEQ,1)*D2RATE(ISEQ,1)
   D2FLDOUT(ISEQ,1) = D2FLDOUT(ISEQ,1)*D2RATE(ISEQ,1)
-END DO
-!$OMP END PARALLEL DO
-
-!! save outflow (t)
-!$OMP PARALLEL DO
-DO ISEQ=1, NSEQALL
-  D2RIVOUT_PRE(ISEQ,1)=D2RIVOUT(ISEQ,1)
-  D2FLDOUT_PRE(ISEQ,1)=D2FLDOUT(ISEQ,1)
 END DO
 !$OMP END PARALLEL DO
 
