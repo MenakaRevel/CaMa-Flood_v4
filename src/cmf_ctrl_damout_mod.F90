@@ -93,16 +93,19 @@ END SUBROUTINE CMF_DAMOUT_NMLIST
 !####################################################################
 SUBROUTINE CMF_DAMOUT_INIT
 USE CMF_UTILS_MOD,      ONLY: INQUIRE_FID
-USE YOS_CMF_INPUT,      ONLY: NX, NY, LRESTART
+USE YOS_CMF_INPUT,      ONLY: NX, NY, LRESTART, LPTHOUT
 USE YOS_CMF_MAP,        ONLY: I2VECTOR, I1NEXT, NSEQALL, NSEQMAX
 USE YOS_CMF_PROG,       ONLY: D2DAMSTO, D2DAMINF
+USE YOS_CMF_MAP,        ONLY: NPTHOUT, NPTHLEV, PTH_UPST, PTH_DOWN, PTH_ELV !! bifurcation pass
 
 ! reed setting from CDAMFILE
 IMPLICIT NONE
 INTEGER(KIND=JPIM)         :: NDAMFILE
 INTEGER(KIND=JPIM)         :: ISEQ, JSEQ
 INTEGER(KIND=JPIM)         :: IX, IY
-REAL(KIND=JPRB)            :: FldVol_mcm, ConVol_mcm, totalsto_mcm !! from file in Million Cubic Metter
+REAL(KIND=JPRB)            :: FldVol_mcm, ConVol_mcm, TotVol_mcm !! from file in Million Cubic Metter
+
+INTEGER(KIND=JPIM)         :: IPTH, ILEV, ISEQP, JSEQP
 !####################################################################
 WRITE(LOGNAM,*) ""
 WRITE(LOGNAM,*) "!---------------------!"
@@ -136,7 +139,7 @@ I1DAM(:)=0
 !! read dam parameters
 DO IDAM = 1, NDAM
   READ(NDAMFILE,*) GRanD_ID(IDAM), DamName(IDAM), DamLon(IDAM), DamLat(IDAM), upreal(IDAM), &
-   DamIX(IDAM), DamIY(IDAM), FldVol_mcm, ConVol_mcm, totalsto_mcm, R_VolUpa(IDAM), Qn(IDAM), Qf(IDAM)
+   DamIX(IDAM), DamIY(IDAM), FldVol_mcm, ConVol_mcm, TotVol_mcm, R_VolUpa(IDAM), Qn(IDAM), Qf(IDAM)
 
   !! storage parameter --- from Million Cubic Meter to m3
   FldVol(IDAM) = FldVol_mcm * 1.D6                  ! Flood control storage capacity: exclusive for flood control
@@ -187,6 +190,19 @@ ENDIF
 DO ISEQ=1, NSEQALL
   D2DAMINF(ISEQ,1)=0.D0
 END DO
+
+!! Stop bifurcation at dam & dam-upstream grids
+IF( LPTHOUT )THEN
+  DO IPTH=1, NPTHOUT
+    ISEQP=PTH_UPST(IPTH)
+    JSEQP=PTH_DOWN(IPTH)
+    IF( I1DAM(ISEQP)>0 .or. I1DAM(JSEQP)>0 )THEN
+      DO ILEV=1, NPTHLEV
+        PTH_ELV(IPTH,ILEV)=1.D20  !! no bifurcation
+      END DO
+    ENDIF
+  END DO
+ENDIF
 
 END SUBROUTINE CMF_DAMOUT_INIT
 !####################################################################
@@ -316,7 +332,7 @@ SUBROUTINE UPDATE_INFLOW
 USE YOS_CMF_INPUT,      ONLY: PMINSLP, PMANFLD
 USE YOS_CMF_MAP,        ONLY: D2RIVLEN, D2RIVMAN, D2ELEVTN, D2NXTDST, D2RIVWTH
 USE YOS_CMF_PROG,       ONLY: D2RIVOUT_PRE, D2FLDOUT_PRE
-USE YOS_CMF_DIAG,       ONLY: D2RIVDPH, D2RIVVEL, D2RIVINF, D2FLDDPH, D2FLDINF
+USE YOS_CMF_DIAG,       ONLY: D2RIVDPH, D2RIVVEL, D2FLDDPH
 IMPLICIT NONE
 !$ SAVE
 INTEGER                    :: ISEQ, JSEQ
