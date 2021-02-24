@@ -8,3 +8,8 @@
 out/
 
 inp/
+
+*.mod
+*.o
+*.a
+*/Main_cmf
