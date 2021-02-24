@@ -9,7 +9,16 @@ out/
 
 inp/
 
+obs/
+
 *.mod
 *.o
 *.a
 */Main_cmf
+
+*.png
+
+*.one
+*.ctl
+
+*/CaMa-Flood.o*
