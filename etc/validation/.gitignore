@@ -6,3 +6,9 @@
 txt_*
 
 fig_*
+
+out/
+map/
+txt/
+fig/
+obs/
