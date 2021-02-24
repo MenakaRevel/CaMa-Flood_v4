@@ -16,20 +16,20 @@
 #==========================================================
 
 #*** PBS setting when needed
-#PBS -q E20
-#PBS -l select=1:ncpus=20:mem=20gb
+#PBS -q E10
+#PBS -l select=1:ncpus=10:mem=20gb
 #PBS -j oe
 #PBS -m ea
 #PBS -V
-
+#PBS -N CaMa-Flood
 #================================================
 # (0) Basic Setting (for workstation)
 
 #*** 0a. Set CaMa-Flood base directory
-BASE=`pwd`/../..
+# BASE=`pwd`/../..
 #BASE="/cluster/data5/hanazaki/CaMa-Flood_v4/"
 # BASE="/home/yamadai/work/CaMa_v396/cmf_v396_pkg"  # setting for PBS in cluster
-
+BASE="/cluster/data6/menaka/dev_CaMa-Flood_v4/CaMa-Flood_v4"
 echo $BASE
 
 #*** 0b. Set dynamic library if needed

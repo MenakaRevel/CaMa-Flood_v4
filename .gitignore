@@ -22,3 +22,4 @@ obs/
 *.ctl
 
 */CaMa-Flood.o*
+etc/validation/out/

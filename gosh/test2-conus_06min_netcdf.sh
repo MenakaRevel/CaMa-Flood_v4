@@ -17,18 +17,19 @@
 #==========================================================
 
 #*** PBS setting when needed
-#PBS -q E20
-#PBS -l select=1:ncpus=20:mem=10gb
+#PBS -q E10
+#PBS -l select=1:ncpus=10:mem=10gb
 #PBS -j oe
 #PBS -m ea
 #PBS -V
-
+#PBS -N CaMa-Flood
 #================================================
 # (0) Basic Setting (for workstation)
 
 #*** 0a. Set CaMa-Flood base directory
-BASE=`pwd`/..
+# BASE=`pwd`/..
 # BASE="/home/yamadai/work/CaMa_v400/cmf_v400_pkg"  # setting for PBS in cluster
+BASE="/cluster/data6/menaka/dev_CaMa-Flood_v4/CaMa-Flood_v4"
 
 echo $BASE
 
@@ -46,7 +47,7 @@ export OMP_NUM_THREADS=16                  # OpenMP cpu num
 
 #============================
 #*** 1a. Experiment directory setting
-EXP="test2-conus_06min"                     # experiment name (output directory name)
+EXP="test2-dev_HanazakiDam"                     # experiment name (output directory name)
 RDIR=${BASE}/out/${EXP}                     # directory to run CaMa-Flood
 EXE="MAIN_cmf"                              # Execute file name
 PROG=${BASE}/src/${EXE}                     # location of Fortran main program
