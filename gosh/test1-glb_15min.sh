@@ -16,8 +16,8 @@
 #==========================================================
 
 #*** PBS setting when needed
-#PBS -q E20
-#PBS -l select=1:ncpus=20:mem=10gb
+#PBS -q E10
+#PBS -l select=1:ncpus=10:mem=10gb
 #PBS -j oe
 #PBS -m ea
 #PBS -V

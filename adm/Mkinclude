@@ -21,8 +21,8 @@ CFLAGS=$(DCDF)
 #LIB = -L/opt/intel/lib -L/opt/intel/mkl/lib -L/opt/local/lib
 
 ## with netCDF
-INC = -I/opt/intel/include -I/opt/local/include -I/opt/local/netcdf-fortran-4/include
-LIB = -L/opt/intel/lib -L/opt/intel/mkl/lib -L/opt/local/lib -L/opt/local/netcdf-fortran-4/lib -lnetcdff
+INC = -I/opt/intel/include -I/opt/local/include -I/opt/local/netcdf-fortran-4.4.5/include
+LIB = -L/opt/intel/lib -L/opt/intel/mkl/lib -L/opt/local/lib -L/opt/local/netcdf-fortran-4.4.5/lib -lnetcdff
 
 #==============================
 # FCMP: main program (src/), FC: pre/post process (map/ etc/)

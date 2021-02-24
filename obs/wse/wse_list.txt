@@ -1,0 +1,13 @@
+     River                 Station     ix     iy     EGM08    EGM96  
+    AMAZON           AMAZON_KM3013    438    376     18.97    19.21
+    AMAZON           AMAZON_KM0828    493    371    -16.09   -15.70
+    AMAZON           AMAZON_KM0344    507    368    -22.86   -22.01
+     CONGO            CONGO_KM2183    820    358    -19.30   -18.75
+     CONGO            CONGO_KM1010    789    365     -8.72    -8.79
+     CONGO            CONGO_KM0032    771    385      7.73     8.37
+      LENA             LENA_KM5463   1190    121    -20.10   -19.47
+      LENA             LENA_KM3073   1229    104    -12.53   -12.10
+      LENA             LENA_KM0360   1230     75     -7.38    -6.96
+    MEKONG           MEKONG_KM1254   1139    290    -26.98   -26.88
+    MEKONG           MEKONG_KM0779   1144    302    -15.49   -16.03
+    MEKONG           MEKONG_KM0485   1144    311    -10.28   -10.99
