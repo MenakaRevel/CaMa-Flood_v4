@@ -3,12 +3,6 @@
 *.jpg
 *.txt
 
-txt_*
+etc/validation/txt_*/
 
-fig_*
-
-*out/
-map/
-txt/
-fig/
-obs/
+etc/validation/fig_*/
