@@ -10,6 +10,7 @@ out/
 inp/
 
 obs/
+obs_sample/
 
 *.mod
 *.o
@@ -23,3 +24,7 @@ obs/
 
 */CaMa-Flood.o*
 etc/validation/out/
+adm/Mkinclude
+adm/Mkinclude
+
+

@@ -1,4 +1,0 @@
-      River                   Station    ix1    iy1    ix2    iy2
-MISSISSIPPI     MISSISSIPPI_STATION_1    398    133  -9999  -9999
-MISSISSIPPI     MISSISSIPPI_STATION_2    398    161  -9999  -9999
-MISSISSIPPI     MISSISSIPPI_STATION_3    385    240  -9999  -9999

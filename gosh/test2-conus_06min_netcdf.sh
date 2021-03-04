@@ -30,6 +30,8 @@
 # BASE=`pwd`/..
 # BASE="/home/yamadai/work/CaMa_v400/cmf_v400_pkg"  # setting for PBS in cluster
 BASE="/cluster/data6/menaka/dev_CaMa-Flood_v4/CaMa-Flood_v4"
+# BASE=`pwd`/..
+# BASE="/home/yamadai/work/dev_CaMa_v410/cmf_v410_pkg"  # setting for PBS in cluster
 
 echo $BASE
 

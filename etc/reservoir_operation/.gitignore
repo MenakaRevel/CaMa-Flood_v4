@@ -1,1 +1,6 @@
 CaMa-Flood.o*
+
+*.csv
+
+data/
+sample_data/

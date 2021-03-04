@@ -30,6 +30,14 @@
 #BASE="/cluster/data5/hanazaki/CaMa-Flood_v4/"
 # BASE="/home/yamadai/work/CaMa_v396/cmf_v396_pkg"  # setting for PBS in cluster
 BASE="/cluster/data6/menaka/dev_CaMa-Flood_v4/CaMa-Flood_v4"
+# BASE=`pwd`/../..
+# PWDD=`pwd`
+
+#BASE="/cluster/data5/hanazaki/CaMa-Flood_v4/"
+
+#BASE="/home/yamadai/work/dev_CaMa_v3410/cmf_v410_pkg"  # setting for PBS in cluster
+PWDD="${BASE}/etc/reservoir_operation"
+
 echo $BASE
 
 #*** 0b. Set dynamic library if needed
@@ -38,7 +46,7 @@ export HDF5LIB="/opt/local/hdf5-1.10.5/lib"
 export DYLD_LIBRARY_PATH="${HDF5LIB}:${IFORTLIB}:${DYLD_LIBRARY_PATH}"
 
 #*** 0c. OpenMP thread number
-export OMP_NUM_THREADS=16                    # OpenMP cpu num
+export OMP_NUM_THREADS=10                    # OpenMP cpu num
 
 #================================================
 # (1) Experiment setting
@@ -63,10 +71,11 @@ LADPSTP=".TRUE."                            # .TRUE. for adaptive time step
 LFPLAIN=".TRUE."                            # .TRUE. to activate floodplain storage
 LKINE=".FALSE."                             # .TRUE. to use kinematic wave equation
 LFLDOUT=".TRUE."                            # .TRUE. to activate floodplain discharge
-LPTHOUT=".FALSE."                            # .TRUE. to activate bifurcation flow, mainly for delta simulation
+LPTHOUT=".TRUE."                            # .TRUE. to activate bifurcation flow, mainly for delta simulation
 LDAMOUT=".TRUE."                           # .TRUE. to activate reservoir operation (under development)
 
-
+# CDAMFILE="${PWDD}/sample_data/dam_params_sample.csv"
+CDAMFILE="${PWDD}/data/dam_params_glb_15min_ERA5Land.csv"
 #============================
 #*** 1c. simulation time
 YSTA=2000                                   # start year ( from YSTA / Jan  1st _ 00:00)
@@ -198,10 +207,10 @@ IFRQ_OUT=3                                 # output frequency: [1,2,3,...,24] ho
 
 LOUTCDF=".FALSE."                           # .TRUE. netCDF output, .FALSE. plain binary output
 COUTDIR="./"                                # output directory 
-#CVARSOUT="outflw,storge,fldfrc,maxdph,flddph" # list output variable (comma separated)
+CVARSOUT="outflw,storge,fldfrc,maxdph,flddph" # list output variable (comma separated)
 #CVARSOUT="rivout,rivsto,rivdph,rivvel,fldout,fldsto,flddph,fldfrc,fldare,sfcelv,outflw,storge,pthflw,pthout,maxsto,maxflw,maxdph,damsto,daminf" # list output variable (comma separated)    # dam variables are added!!!!
 
-CVARSOUT="flddph,outflw,rivdph" # list output variable (comma separated)    # dam variables are added!!!!
+# CVARSOUT="flddph,outflw,rivdph" # list output variable (comma separated)    # dam variables are added!!!!
 #CVARSOUT="flddph,outflw,daminf,damsto,rivdph" # list output variable (comma separated)    # dam variables are added!!!!
 
 COUTTAG=""  # see (3) set each year         #   output tag $(COUTDIR)/$(VARNAME)$(OUTTAG).bin
@@ -259,7 +268,6 @@ do
   fi
 
   echo "LRESTART: ${LRESTART}"  >> log.txt
-
 
   #*** 3b. update start-end year
   SYEAR=$IYR
@@ -435,7 +443,14 @@ IFRQ_OUT = ${IFRQ_OUT}                 ! output data write frequency (hour)
 /
 EOF
 
-#### 6. sea level (optional) 
+#*** Opt. Reservoir Operation
+cat >> ${NMLIST} << EOF
+&NDAMOUT
+CDAMFILE = "${CDAMFILE}"               ! Reservoir Parameter File
+/
+EOF
+
+#### Opt. sea level (optional) 
 #cat >> ${NMLIST} << EOF
 #&NBOUND
 #LSEALEVCDF =  ${LSEALEVCDF}            ! * true : netCDF sea level boundary
