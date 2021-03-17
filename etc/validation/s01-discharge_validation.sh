@@ -22,10 +22,10 @@ CAMADIR="../../"
 MAPDIR="../../map/glb_15min"
 # OUTDIR="../../out/test1-glb_15min"
 OUTDIR="../../out/test-dev_HanazakiDam"
-# OBSDIR="../../obs_sample/discharge"
-OBSDIR="/cluster/data6/menaka/GRDC_2019"
-# LIST="../../obs_sample/discharge/discharge_list_glb_15min.txt"  ## Discharge location list [as a text file]
-LIST=${MAPDIR}"/GRDC_alloc.txt"  ## Discharge location list [as a text file]
+OBSDIR="../../obs_sample/discharge"
+# OBSDIR="/cluster/data6/menaka/GRDC_2019"
+LIST="../../obs_sample/discharge/discharge_list_glb_15min.txt"  ## Discharge location list [as a text file]
+# LIST=${MAPDIR}"/GRDC_alloc.txt"  ## Discharge location list [as a text file]
 #### validation project tag
 TAG="glb_Dam"
 ###select the output file type [netcdf/bin]
